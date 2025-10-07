@@ -11,7 +11,7 @@ import keyboard  # For global hotkeys
 import platform
 
 # === SETTINGS ===
-SOUND_FOLDER = "D:/Soundboard" # === edit this to your folder ===
+SOUND_FOLDER = "D:/Soundboard"
 OUTPUT_DEVICE_NAME = "VB-Audio Virtual Cable"
 MAX_COLUMNS = 4
 KEYBIND_FILE = "keybinds.json"
@@ -48,7 +48,64 @@ def save_keybinds():
     with open(KEYBIND_FILE, "w") as f:
         json.dump(keybinds, f, indent=4)
 
+
+# --- GLOBAL HOTKEY REGISTRATION FOR SOUNDS ---
+registered_hotkeys = []
+
+def register_sound_hotkeys():
+    global registered_hotkeys
+    # Unregister previous hotkeys
+    for hk in registered_hotkeys:
+        keyboard.remove_hotkey(hk)
+    registered_hotkeys = []
+    # Register new hotkeys
+    for name, key in keybinds.items():
+        def make_callback(sound_name=name):
+            def callback():
+                for sound in sound_files:
+                    if os.path.splitext(os.path.basename(sound))[0] == sound_name:
+                        play_sound(sound)
+                        break
+            return callback
+        if key:
+            hk = keyboard.add_hotkey(key, make_callback())
+            registered_hotkeys.append(hk)
+
+def load_keybinds():
+    global keybinds
+    if os.path.exists(KEYBIND_FILE):
+        with open(KEYBIND_FILE, "r") as f:
+            keybinds = json.load(f)
+    register_sound_hotkeys()
+
+def save_keybinds():
+    with open(KEYBIND_FILE, "w") as f:
+        json.dump(keybinds, f, indent=4)
+    register_sound_hotkeys()
+
 load_keybinds()
+
+# ----  Alt+S  show / hide support  ----
+window_visible = False   # module-level flag
+
+def toggle_window():
+    """Toggle Tkinter window visibility."""
+    global window_visible
+    if window_visible:
+        root.withdraw()
+        window_visible = False
+    else:
+        root.deiconify()
+        root.lift()
+        root.focus_force()
+        window_visible = True
+
+def start_toggle_hotkey():
+    """Run Alt+S listener in a background thread."""
+    def _listen():
+        keyboard.add_hotkey("alt+s", toggle_window)
+        keyboard.wait()      # keep thread alive
+    threading.Thread(target=_listen, daemon=True).start()
 
 # === PLAYBACK FUNCTION ===
 def play_sound(file_path):
@@ -303,7 +360,8 @@ def on_key_press(event):
                     play_sound(sound)
                     break
 
-root.bind("<Key>", on_key_press)
+# Remove Tkinter key binding, since we now use global hotkeys
+# root.bind("<Key>", on_key_press)
 
 # --- PROGRESS BAR ---
 progress_var = tk.DoubleVar()
@@ -419,5 +477,7 @@ root.update_idletasks()
 window_width = min(root.winfo_reqwidth() + 60, root.winfo_screenwidth() - 100)
 window_height = min(root.winfo_reqheight() + 200, root.winfo_screenheight() - 100)
 root.geometry(f"{window_width}x{window_height}")
+root.withdraw()          # start minimized
+start_toggle_hotkey()    # enable Alt+S toggle
 
 root.mainloop()
