@@ -16,6 +16,7 @@ OUTPUT_DEVICE_NAME = "VB-Audio Virtual Cable"
 MAX_COLUMNS = 4
 KEYBIND_FILE = "keybinds.json"
 
+
 # === FIND OUTPUT DEVICE ===
 def get_output_device(name):
     devices = sd.query_devices()
@@ -269,6 +270,26 @@ setup_global_hotkey()
 root = ttk.Window(themename="darkly")
 root.title("🎧 Soundboard")
 
+root.overrideredirect(True)  # removes default title bar
+
+# --- Custom top bar frame ---
+top_bar = tk.Frame(root, bg="#1E1E2F", height=30)  # adjust color/height
+top_bar.pack(fill="x", side="top")
+
+
+# --- Drag logic only on top_bar ---
+def start_move(event):
+    global x_offset, y_offset
+    x_offset = event.x
+    y_offset = event.y
+
+def do_move(event):
+    x = event.x_root - x_offset
+    y = event.y_root - y_offset
+    root.geometry(f"+{x}+{y}")
+
+top_bar.bind("<ButtonPress-1>", start_move)
+top_bar.bind("<B1-Motion>", do_move)
 title_label = ttk.Label(root, text="🎵 Soundboard", font=("Segoe UI", 20, "bold"))
 title_label.pack(pady=15)
 
