@@ -7,5 +7,6 @@ free soundboard coded in python
 3. have python installed
 4. run this command in terminal: pip install sounddevice soundfile ttkbootstrap keyboard
 5. have "VB-Audio Virtual Cable" installed (if you have a different cable change it to that name in line 15)
-6. i think thats it
+6. when script ran or application opened, it will start minimized, use alt+s to open/close
+7. i think thats it
 
